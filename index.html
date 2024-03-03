@@ -136,7 +136,7 @@
                 const currentTime = new Date();
                 const timeDifference = currentTime - lastMedTime;
 	
-                if (timeDifference >= 12 * 60 * 60 * 1000) {
+                if (timeDifference >= 1000) {
                     const notification = new Notification('Reminder', {
                         body: 'It\'s time to take your meds!',
                     });

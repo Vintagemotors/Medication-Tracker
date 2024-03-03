@@ -11,3 +11,4 @@ A: I have no intention of cloud hosting medical data, if you want to do it yours
 
 ### Configuration
 If you want a different interval than 12 hours or different options, download the html file, edit it, create your own respository and upload it. I do not want visible forks with 200 different settings configured. I am only hosting this because I do not want to set up an https localhost just for this. 
+You need to edit every occurence of  12 * 60 * 60 * 1000 (12 is hours). 

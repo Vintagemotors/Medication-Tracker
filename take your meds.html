@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Medication Tracker</title>
+    		<style>
+        		body {
+            		font-family: Arial, sans-serif;
+            		text-align: center;
+            		margin: 20px;
+					background-color: #091A28;
+					color: #B4B4B4;
+        		}
+
+        		.checkbox-group {
+            		margin-bottom: 10px;
+        		}
+
+        		#log {
+            		text-align: left;
+            		max-width: 30%;
+            		margin: 0 auto;
+        		}
+
+        		.log-entry {
+            		display: flex;
+            		justify-content: space-between;
+            		align-items: center;
+            		margin-bottom: 5px;
+        		}
+
+        		.remove-btn {
+            		cursor: pointer;
+            		color: red;
+            		border: none;
+            		background: none;
+            		outline: none;
+            		margin-left: 10px; /* Added margin to align with log entries */
+        		}
+
+        		#deleteAllButton {
+            		position: fixed;
+            		bottom: 10px;
+            		right: 10px;
+        		}
+
+        		#confirmDialog {
+            		display: none;
+            		position: fixed;
+            		top: 50%;
+            		left: 50%;
+            		transform: translate(-50%, -50%);
+            		background-color: #094270;
+            		padding: 20px;
+            		box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+					border: 2px solid #ddd;
+					border-radius: 3px;
+        		}
+    		</style>
+</head>
+<body>
+    <h1>Medication Tracker</h1>
+    <div class="checkbox-group">
+        <input type="checkbox" id="medCheckbox"> I took my meds<br>
+        <input type="checkbox" id="vitaminCheckbox"> I took my vitamins
+    </div>
+    <button onclick="logMedication()">Confirm</button>
+    <div id="log"></div>
+
+    <!-- Delete All Entries Button -->
+    <button id="deleteAllButton" onclick="openConfirmDialog()">Delete All Entries</button>
+
+    <!-- Confirm Dialog -->
+    <div id="confirmDialog">
+        <p>Are you sure you want to delete all entries?</p>
+        <input type="checkbox" id="confirmCheckbox" onchange="toggleDeleteButton()"> I confirm
+        <button id="deleteConfirmButton" onclick="deleteAllEntries()" disabled>Delete</button>
+        <button onclick="closeConfirmDialog()">Cancel</button>
+    </div>
+
+    <script>
+        let lastMedTime = null;
+
+        // Load log from local storage on page load
+        window.onload = function () {
+            const storedLog = localStorage.getItem('medLog');
+            const logContainer = document.getElementById('log');
+
+            if (storedLog) {
+                logContainer.innerHTML = storedLog;
+
+                // Attach event listener to remove buttons for both existing and new entries
+                const removeButtons = document.querySelectorAll('.remove-btn');
+                removeButtons.forEach(button => {
+                    button.addEventListener('click', removeLogEntry);
+                });
+            }
+        }
+
+        function logMedication() {
+            const medCheckbox = document.getElementById('medCheckbox');
+            const vitaminCheckbox = document.getElementById('vitaminCheckbox');
+            const logContainer = document.getElementById('log');
+
+            if (medCheckbox.checked || vitaminCheckbox.checked) {
+                const currentTime = new Date();
+                const formattedTime = currentTime.toLocaleString();
+
+                if (medCheckbox.checked && vitaminCheckbox.checked) {
+                    logContainer.innerHTML += `<div class="log-entry"><p>${formattedTime} - Meds and vitamins taken</p><button class="remove-btn" onclick="removeLogEntry(this)">Remove</button></div>`;
+                } else if (medCheckbox.checked) {
+                    logContainer.innerHTML += `<div class="log-entry"><p>${formattedTime} - Meds taken</p><button class="remove-btn" onclick="removeLogEntry(this)">Remove</button></div>`;
+                } else {
+                    logContainer.innerHTML += `<div class="log-entry"><p>${formattedTime} - Vitamins taken</p><button class="remove-btn" onclick="removeLogEntry(this)">Remove</button></div>`;
+                }
+
+                lastMedTime = currentTime;
+
+                // Save log to local storage
+                localStorage.setItem('medLog', logContainer.innerHTML);
+
+                // Schedule reminder after 12 hours only if "I took my meds" was checked
+                if (medCheckbox.checked) {
+                    setTimeout(remindToTakeMeds, 12 * 60 * 60 * 1000);
+                }
+
+                // Attach event listener to the new remove button
+                const removeButton = logContainer.lastElementChild.querySelector('.remove-btn');
+                removeButton.addEventListener('click', removeLogEntry);
+            }
+        }
+
+        function remindToTakeMeds() {
+            if (lastMedTime) {
+                const currentTime = new Date();
+                const timeDifference = currentTime - lastMedTime;
+	
+                if (timeDifference >= 12 * 60 * 60 * 1000) {
+                    const notification = new Notification('Reminder', {
+                        body: 'It\'s time to take your meds!',
+                    });
+
+                    // Repeat the reminder every minute until meds are taken
+                    setInterval(() => {
+                        const notification = new Notification('Reminder', {
+                            body: 'It\'s time to take your meds!',
+                        });
+                    }, 60 * 1000);
+                }
+            }
+        }
+
+        function removeLogEntry(button) {
+            const logEntry = button.parentElement;
+            const logContainer = document.getElementById('log');
+
+            // Remove the entry from the DOM
+            logEntry.remove();
+
+            // Save the updated log to local storage
+            localStorage.setItem('medLog', logContainer.innerHTML);
+        }
+
+        function openConfirmDialog() {
+            const confirmDialog = document.getElementById('confirmDialog');
+            confirmDialog.style.display = 'block';
+        }
+
+        function closeConfirmDialog() {
+            const confirmDialog = document.getElementById('confirmDialog');
+            confirmDialog.style.display = 'none';
+
+            // Uncheck the confirmation checkbox
+            document.getElementById('confirmCheckbox').checked = false;
+
+            // Disable the delete button
+            document.getElementById('deleteConfirmButton').disabled = true;
+        }
+
+        function toggleDeleteButton() {
+            const confirmCheckbox = document.getElementById('confirmCheckbox');
+            const deleteButton = document.getElementById('deleteConfirmButton');
+            deleteButton.disabled = !confirmCheckbox.checked;
+        }
+
+        function deleteAllEntries() {
+            const logContainer = document.getElementById('log');
+            logContainer.innerHTML = '';
+
+            // Save the updated log to local storage
+            localStorage.setItem('medLog', '');
+            closeConfirmDialog();
+        }
+
+        Notification.requestPermission();
+    </script>
+</body>
+</html>
